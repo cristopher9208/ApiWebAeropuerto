@@ -1,0 +1,60 @@
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { UsuarioModel } from 'src/app/modelos/usuario.model';
+import { UsuarioService } from 'src/app/servicios/usuario.service';
+import Swal from 'sweetalert2'
+
+@Component({
+  selector: 'app-edit',
+  templateUrl: './edit.component.html',
+  styleUrls: ['./edit.component.css']
+})
+export class EditComponent implements OnInit {
+
+  constructor(private fb: FormBuilder,
+    private usuarioService: UsuarioService,
+    private router: Router,
+    private route: ActivatedRoute) { }
+
+  fgValidacion = this.fb.group({
+    id: ['', [Validators.required]],
+    nombre: ['', [Validators.required]],
+    apellido: ['', [Validators.required]],
+    telefono: ['', [Validators.required, Validators.minLength(6)]],
+    correo: ['', [Validators.required, Validators.email]],
+  
+  });
+  ngOnInit(): void {
+    let id = this.route.snapshot.params["id"]
+    this.getWithId(id);
+  }
+  getWithId(id: string){
+    this.usuarioService.getWithId(id).subscribe((data: UsuarioModel) => {
+      console.log(data)
+      this.fgValidacion.controls["id"].setValue(id)
+      this.fgValidacion.controls["nombre"].setValue(data.nombre as string)
+      this.fgValidacion.controls["apellido"].setValue(data.apellido as string)
+      this.fgValidacion.controls["correo"].setValue(data.correo as string)
+      this.fgValidacion.controls["telefono"].setValue(data.telefono as string)
+    })
+  }
+  edit(){
+    let usuario = new UsuarioModel();
+    usuario.id = this.fgValidacion.controls["id"].value as string;
+    usuario.nombre = this.fgValidacion.controls["nombre"].value as string;
+    usuario.apellido = this.fgValidacion.controls["apellido"].value as string;
+    usuario.correo = this.fgValidacion.controls["correo"].value as string;
+    usuario.telefono = this.fgValidacion.controls["telefono"].value as string;
+ 
+    this.usuarioService.update(usuario).subscribe((data: UsuarioModel)=> {
+      Swal.fire('Editado Correctamente!', '', 'success')
+      this.router.navigate(['/admin/get']);
+    },
+    (error: any) => {
+      console.log(error)
+      alert("Error en el envio");
+    })
+  }
+
+}
